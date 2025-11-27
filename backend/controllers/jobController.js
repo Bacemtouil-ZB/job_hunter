@@ -2,75 +2,59 @@ import asyncHandler from "express-async-handler";
 import User from "../models/UserModel.js";
 import Job from "../models/JobModel.js";
 //create job
-export const createJob = asyncHandler(async (requestAnimationFrame,res)=>{
-try {
-
-
-    const user = await User.findOne({auth0Id: req.oidc.user.sub});
-    console.log("user:" , user);
-    const isAuth= req.oidc.isAuthentificated()||user.email;
-    if (!isAuth){
-        return res.status(401).json({message:"not authorised"});
-    }
-const{title,description,location,salary,jobType,tags,skills, salaryType,negotiable} = req.body;
-if (!title) {
-    return res.status(400).json({ message: "Title is required" });
-}
-if (!description) {
-    return res.status(400).json({ message: "Description is required" });
-}
-if (!location) {
-    return res.status(400).json({ message: "Location is required" });
-}
-if (!salary) {
-    return res.status(400).json({ message: "Salary is required" });
-}
-if (!jobType) {
-    return res.status(400).json({ message: "Job Type is required" });
-}
-if (!tags) {
-    return res.status(400).json({ message: "Tags are required" });
-}
-if (!skills) {
-    return res.status(400).json({ message: "Skills are required" });
-}
-
-const job=new Job(  
-    {
-    title,
-    description,
-    location,
-    salary,
-    jobType,
-    tags,
-    skills,
-    salaryType,
-    negotiable,
-    createdBy : user._id,
+export const createJob = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findOne({ auth0Id: req.oidc.user.sub });
+    if (!user) {
+      return res.status(401).json({ message: "Not authorized" });
     }
 
-);
-await job.save();
-return res.status(201).json(job);
+    const isAuth = req.oidc.isAuthenticated() || user.email;
+    if (!isAuth) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
 
-} catch (error) {
+    const { title, description, location, salary, jobType, tags, skills, salaryType, negotiable } = req.body;
+
+    // Validation
+    if (!title) return res.status(400).json({ message: "Title is required" });
+    if (!description) return res.status(400).json({ message: "Description is required" });
+    if (!location) return res.status(400).json({ message: "Location is required" });
+    if (!salary) return res.status(400).json({ message: "Salary is required" });
+    if (!jobType) return res.status(400).json({ message: "Job Type is required" });
+    if (!tags || !tags.length) return res.status(400).json({ message: "Tags are required" });
+    if (!skills || !skills.length) return res.status(400).json({ message: "Skills are required" });
+
+    const job = new Job({
+      title,
+      description,
+      location,
+      salary,
+      jobType,
+      tags,
+      skills,
+      salaryType,
+      negotiable,
+      createdBy: user._id,
+    });
+
+    await job.save();
+    return res.status(201).json(job);
+
+  } catch (error) {
     console.log("error in createJob", error);
-    return res.status(500).json({
-        message:"server error",
-    })
-    
-}
+    return res.status(500).json({ message: "Server error" });
+  }
 });
-// get job
+
+// Add this function (put it after createJob)
 export const getJobs = asyncHandler(async (req, res) => {
   try {
-    const jobs = await Job.find({})
-      .populate("createdBy", "name profilePicture");
-
-    // Sort by createdAt descending (latest first)
-    const sortedJobs = jobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    return res.status(200).json(sortedJobs);
+    const jobs = await Job.find()
+      .populate("createdBy", "name profilePicture")
+      .sort({ createdAt: -1 }); // newest first
+    
+    return res.status(200).json(jobs);
   } catch (error) {
     console.log("error in getJobs:", error);
     return res.status(500).json({
@@ -78,6 +62,7 @@ export const getJobs = asyncHandler(async (req, res) => {
     });
   }
 });
+
 
 //get jobs by user
 export const getJobsByUser = asyncHandler(async (req,res)=>{

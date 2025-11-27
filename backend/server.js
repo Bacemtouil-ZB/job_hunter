@@ -14,6 +14,8 @@ import asyncHandler from "express-async-handler";
 dotenv.config();
 
 const app = express();
+console.log("DEBUG PORT =", process.env.PORT);
+
 
 // ---------------- CSP + Security Fix ----------------
 app.use(
@@ -55,30 +57,30 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(auth(config));
 //function to check if user exists in the database
-const ensureUserInDB= asyncHandler(async(user)=>{
+const ensureUserInDB = asyncHandler(async (user) => {
   try {
-    const existingUser = await User.findOne({auth0ID: user.sub});
-    if(!existingUser){
-      //create new user document
+    const existingUser = await User.findOne({ auth0Id: user.sub });
+
+    if (!existingUser) {
       const newUser = new User({
-        auth0Id : user.sub,
+        auth0Id: user.sub,
         email: user.email,
-        name: user.name,
-        role:"jobseeker",
-        profilePicture:user.picture,
+        name: user.name || user.nickname || "",
+        role: "jobseeker",
+        profilePicture: user.picture,
       });
+
       await newUser.save();
-      console.log("user added to DB",user)
-    }else{
-        console.log("user already exists in db ",existingUser)
+      console.log("User added to DB:", newUser);
+    } else {
+      console.log("User already exists in DB:", existingUser);
+    }
 
-  }
   } catch (error) {
-    console.log("error checking or adding user to db",error.message);
-
-    
-  } 
+    console.log("Error checking/adding user:", error.message);
+  }
 });
+
 
 app.get("/",async (req, res) => {
   if (req.oidc.isAuthenticated()){
@@ -97,28 +99,35 @@ app.get("/rendom", (req, res) => {
   res.json({ random: Math.random() });
 });
 
-// Auto-load routes
-const routeFiles = fs.readdirSync("./routes");
-routeFiles.forEach((file) => {
-  import(`./routes/${file}`)
-    .then((route) => {
-      app.use("/api/v1/",route.default);
-    })
-    .catch((error) => {
-      console.log("Error importing route", error);
-    });
-});
-
 // Start server
 const server = async () => {
-  await connect();
+  try {
+    console.log("Trying to connect to MongoDB...");
+    await connect();
+    console.log("Mongo connected successfully!");
+  } catch (error) {
+    console.log("MongoDB Connection Error:", error.message);
+  }
+
+  // Load routes FIRST
+  const routeFiles = fs.readdirSync("./routes");
+  for (const file of routeFiles) {
+    try {
+      const route = await import(`./routes/${file}`);
+      app.use("/api/v1/", route.default);
+      console.log(`✅ Route loaded: ${file}`);
+    } catch (error) {
+      console.log(`❌ Error loading ${file}:`, error);
+    }
+  }
+
+  // THEN start the server
   try {
     app.listen(process.env.PORT, () => {
       console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
     });
   } catch (error) {
     console.log("Server error", error.message);
-    process.exit(1);
   }
 };
 

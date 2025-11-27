@@ -152,7 +152,6 @@ export const JobsContextProvider = ({ children }) => {
     useEffect(() => {
         if (userProfile._id) {
             getUserJobs(userProfile._id);
-            getUserProfile(userProfile.auth0Id);
         }
     }, [userProfile._id]);
 

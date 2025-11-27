@@ -12,7 +12,7 @@ export const GlobalContextProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // input state
+  // Input states
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [salary, setSalary] = useState(0);
@@ -27,6 +27,9 @@ export const GlobalContextProvider = ({ children }) => {
     address: "",
   });
 
+  // ----------------------------------------
+  // AUTH CHECK
+  // ----------------------------------------
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
@@ -34,31 +37,34 @@ export const GlobalContextProvider = ({ children }) => {
         const res = await axios.get("/api/v1/check-auth");
         setIsAuthenticated(res.data.isAuthenticated);
         setAuth0User(res.data.user);
-        setLoading(false);
       } catch (error) {
         console.log("Error checking auth", error);
       } finally {
         setLoading(false);
       }
-
-
     };
 
     checkAuth();
   }, []);
 
-
   const getUserProfile = async (id) => {
     try {
       const res = await axios.get(`/api/v1/user/${id}`);
-
       setUserProfile(res.data);
     } catch (error) {
       console.log("Error getting user profile", error);
     }
   };
 
-  // handle input change
+  useEffect(() => {
+    if (isAuthenticated && auth0User) {
+      getUserProfile(auth0User.sub);
+    }
+  }, [isAuthenticated, auth0User]);
+
+  // ----------------------------------------
+  // HANDLERS
+  // ----------------------------------------
   const handleTitleChange = (e) => {
     setJobTitle(e.target.value.trimStart());
   };
@@ -71,41 +77,68 @@ export const GlobalContextProvider = ({ children }) => {
     setSalary(e.target.value);
   };
 
-  useEffect(() => {
-    if (isAuthenticated && auth0User) {
-      getUserProfile(auth0User.sub);
-    }
-  }, [isAuthenticated, auth0User]);
+  // ----------------------------------------
+  // ⭐ RESET JOB FORM (missing before)
+  // ----------------------------------------
+  const resetJobForm = () => {
+    setJobTitle("");
+    setJobDescription("");
+    setSalary(0);
+    setActiveEmploymentTypes([]);
+    setSalaryType("Year");
+    setNegotiable(false);
+    setTags([]);
+    setSkills([]);
+    setLocation({
+      country: "",
+      city: "",
+      address: "",
+    });
+  };
 
+  // ----------------------------------------
+  // RETURN PROVIDER
+  // ----------------------------------------
   return (
-    <GlobalContext.Provider value={{
-      isAuthenticated,
-      auth0User,
-      userProfile,
-      getUserProfile,
-      loading,
-      jobTitle,
-      jobDescription,
-      salary,
-      activeEmploymentTypes,
-      salaryType,
-      negotiable,
-      tags,
-      skills,
-      location,
-      handleTitleChange,
-      handleDescriptionChange,
-      handleSalaryChange,
-      setActiveEmploymentTypes,
-      setJobDescription,
-      setSalaryType,
-      setNegotiable,
-    }}>
+    <GlobalContext.Provider
+      value={{
+        isAuthenticated,
+        auth0User,
+        userProfile,
+        getUserProfile,
+        loading,
+
+        // job fields
+        jobTitle,
+        jobDescription,
+        salary,
+        activeEmploymentTypes,
+        salaryType,
+        negotiable,
+        tags,
+        skills,
+        location,
+
+        // handlers
+        handleTitleChange,
+        handleDescriptionChange,
+        handleSalaryChange,
+        setActiveEmploymentTypes,
+        setJobDescription,
+        setSalaryType,
+        setNegotiable,
+        setTags,
+        setSkills,
+        setLocation,
+
+        // ⭐ ADDED
+        resetJobForm,
+      }}
+    >
       {children}
     </GlobalContext.Provider>
   );
-
-}
+};
 
 export const useGlobalContext = () => {
   return useContext(GlobalContext);

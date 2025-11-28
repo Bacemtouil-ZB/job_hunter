@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  use,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const GlobalContext = createContext();
 
@@ -12,7 +19,7 @@ export const GlobalContextProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Input states
+  // input state
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [salary, setSalary] = useState(0);
@@ -27,9 +34,6 @@ export const GlobalContextProvider = ({ children }) => {
     address: "",
   });
 
-  // ----------------------------------------
-  // AUTH CHECK
-  // ----------------------------------------
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
@@ -37,6 +41,7 @@ export const GlobalContextProvider = ({ children }) => {
         const res = await axios.get("/api/v1/check-auth");
         setIsAuthenticated(res.data.isAuthenticated);
         setAuth0User(res.data.user);
+        setLoading(false);
       } catch (error) {
         console.log("Error checking auth", error);
       } finally {
@@ -50,21 +55,14 @@ export const GlobalContextProvider = ({ children }) => {
   const getUserProfile = async (id) => {
     try {
       const res = await axios.get(`/api/v1/user/${id}`);
+
       setUserProfile(res.data);
     } catch (error) {
       console.log("Error getting user profile", error);
     }
   };
 
-  useEffect(() => {
-    if (isAuthenticated && auth0User) {
-      getUserProfile(auth0User.sub);
-    }
-  }, [isAuthenticated, auth0User]);
-
-  // ----------------------------------------
-  // HANDLERS
-  // ----------------------------------------
+  // handle input change
   const handleTitleChange = (e) => {
     setJobTitle(e.target.value.trimStart());
   };
@@ -77,9 +75,6 @@ export const GlobalContextProvider = ({ children }) => {
     setSalary(e.target.value);
   };
 
-  // ----------------------------------------
-  // ⭐ RESET JOB FORM (missing before)
-  // ----------------------------------------
   const resetJobForm = () => {
     setJobTitle("");
     setJobDescription("");
@@ -96,9 +91,12 @@ export const GlobalContextProvider = ({ children }) => {
     });
   };
 
-  // ----------------------------------------
-  // RETURN PROVIDER
-  // ----------------------------------------
+  useEffect(() => {
+    if (isAuthenticated && auth0User) {
+      getUserProfile(auth0User.sub);
+    }
+  }, [isAuthenticated, auth0User]);
+
   return (
     <GlobalContext.Provider
       value={{
@@ -107,8 +105,6 @@ export const GlobalContextProvider = ({ children }) => {
         userProfile,
         getUserProfile,
         loading,
-
-        // job fields
         jobTitle,
         jobDescription,
         salary,
@@ -118,8 +114,6 @@ export const GlobalContextProvider = ({ children }) => {
         tags,
         skills,
         location,
-
-        // handlers
         handleTitleChange,
         handleDescriptionChange,
         handleSalaryChange,
@@ -130,8 +124,6 @@ export const GlobalContextProvider = ({ children }) => {
         setTags,
         setSkills,
         setLocation,
-
-        // ⭐ ADDED
         resetJobForm,
       }}
     >

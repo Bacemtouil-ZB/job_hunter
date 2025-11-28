@@ -10,7 +10,7 @@ router.get("/jobs/search" , searchJobs);
 router.put("/jobs/apply/:id" , protect, applyJob);
 //like and unlike job
 router.put("/jobs/like/:id" , protect, likeJob);
-router.get("/jobs/:id" , protect , getJobById);
+router.get("/jobs/:id" , getJobById);
 router.delete("/jobs/:id" , protect , deleteJob);
 
 export default router ;

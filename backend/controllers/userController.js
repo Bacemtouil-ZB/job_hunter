@@ -1,5 +1,5 @@
 import asyncHandler from "express-async-handler";
-import User from "../models/UserModel";
+import User from "../models/UserModel.js";
 export const getUserProfile =asyncHandler(async (requestAnimationFrame, res)=>{
 try {
     const {id}=requestAnimationFrame.params;//find user by auth0 if

@@ -3,7 +3,6 @@ import { useGlobalContext } from "@/context/globalContext";
 import React from "react";
 import { Label } from "../ui/label";
 import "react-quill-new/dist/quill.snow.css";
-import { Separator } from "../ui/separator";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
 import {
@@ -14,6 +13,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import dynamic from "next/dynamic";
+import { DollarSign, FileText } from "lucide-react";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), {
   ssr: false,
@@ -21,7 +21,6 @@ const ReactQuill = dynamic(() => import("react-quill-new"), {
 
 function MyEditor() {
   const { setJobDescription, jobDescription } = useGlobalContext();
-
   return (
     <ReactQuill
       value={jobDescription}
@@ -33,7 +32,7 @@ function MyEditor() {
       modules={{
         toolbar: true,
       }}
-      className="custom-quill-editor"
+      className="custom-quill-editor border-2 border-gray-200 rounded-xl"
     />
   );
 }
@@ -47,73 +46,114 @@ function JobDetails() {
     setNegotiable,
     negotiable,
   } = useGlobalContext();
+
   return (
-    <div className="p-6 flex flex-col gap-4 bg-background border border-border rounded-lg">
-      <div className="grid grid-cols-2 gap-6">
-        <div className="flex-1">
-          <h3 className="text-black font-bold">Job Description</h3>
-          <Label htmlFor="jobDescription" className="text-gray-500 mt-2">
-            Provide a detailed description of the job.
-          </Label>
+    <div className="space-y-8">
+      {/* Job Description Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+            <FileText size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Job Description</h3>
+            <p className="text-sm text-gray-600">Provide detailed information about the role</p>
+          </div>
         </div>
-        <div className="flex-1">
+
+        <div className="mt-4">
           <MyEditor />
         </div>
       </div>
 
-      <Separator className="my-2" />
-
-      <div className="relative grid grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-black font-bold">Salary</h3>
-          <Label htmlFor="salary" className="text-gray-500 mt-2">
-            Enter the salary range for the job.
-          </Label>
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200"></div>
         </div>
+        <div className="relative flex justify-center">
+          <span className="px-4 bg-white text-sm text-gray-500 font-medium">Compensation</span>
+        </div>
+      </div>
 
-        <div>
-          <Input
-            type="number"
-            id="salary"
-            placeholder="Enter Salary"
-            value={salary}
-            onChange={handleSalaryChange}
-            className="mt-2"
-          />
-
-          <div className="flex gap-2 mt-2 justify-between">
-            <div className="flex items-center space-x-2 border border-gray-300 rounded-md p-2">
-              <Checkbox id="negotiable" />
-              <Label htmlFor="negotiable" className="text-gray-500">
-                Negotiable
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2 border border-gray-300 rounded-md p-2">
-              <Checkbox
-                id="hideSalary"
-                checked={negotiable}
-                onCheckedChange={setNegotiable}
-              />
-              <Label htmlFor="hideSalary" className="text-gray-500">
-                Hide Salary
-              </Label>
-            </div>
-
-            <div>
-              <Select onValueChange={setSalaryType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Type" />
-                </SelectTrigger>
-                <SelectContent className="w-[120px] mt-2">
-                  <SelectItem value="Yearly">Yearly</SelectItem>
-                  <SelectItem value="Month">Month</SelectItem>
-                  <SelectItem value="Hour">Hour</SelectItem>
-                  <SelectItem value="Fixed">Fixed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Salary Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+            <DollarSign size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Salary Details</h3>
+            <p className="text-sm text-gray-600">Set the compensation for this position</p>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Salary Input */}
+          <div className="space-y-2">
+            <Label htmlFor="salary" className="text-sm font-semibold text-gray-700">
+              Salary Amount
+            </Label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">£</span>
+              <Input
+                type="number"
+                id="salary"
+                placeholder="50,000"
+                value={salary}
+                onChange={handleSalaryChange}
+                className="h-12 pl-8 pr-4 border-2 border-gray-200 focus:border-green-500 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Salary Type */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-gray-700">
+              Payment Period
+            </Label>
+            <Select onValueChange={setSalaryType} value={salaryType}>
+              <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-green-500 rounded-xl">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Yearly">Per Year</SelectItem>
+                <SelectItem value="Monthly">Per Month</SelectItem>
+                <SelectItem value="Weekly">Per Week</SelectItem>
+                <SelectItem value="Hourly">Per Hour</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Checkboxes */}
+        <div className="flex flex-wrap gap-3 mt-4">
+          <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl cursor-pointer transition-colors">
+            <Checkbox id="negotiable" checked={negotiable} onCheckedChange={setNegotiable} />
+            <span className="text-sm font-medium text-gray-700">Salary is negotiable</span>
+          </label>
+          
+          <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl cursor-pointer transition-colors">
+            <Checkbox id="hideSalary" />
+            <span className="text-sm font-medium text-gray-700">Hide salary from listing</span>
+          </label>
+        </div>
+
+        {/* Salary Preview */}
+        {salary > 0 && salaryType && (
+          <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Salary Preview</p>
+            <p className="text-2xl font-bold text-gray-900">
+              £{salary.toLocaleString()}
+              <span className="text-base font-medium text-gray-600">
+                {" /"}{salaryType === "Yearly" ? "year" : salaryType === "Monthly" ? "month" : salaryType === "Weekly" ? "week" : "hour"}
+              </span>
+            </p>
+            {negotiable && (
+              <p className="text-xs text-green-600 font-medium mt-1">💬 Negotiable</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

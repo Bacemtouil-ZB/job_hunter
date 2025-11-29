@@ -125,21 +125,28 @@ export const JobsContextProvider = ({ children }) => {
     }
   };
 
-  // like a job
-  const likeJob = async (jobId) => {
-    console.log("Job liked", jobId);
-    try {
-      const res = await axios.put(`/api/v1/jobs/like/${jobId}`);
+  // like/unlike a job (toggle)
+const likeJob = async (jobId) => {
+  console.log("Toggling job like", jobId);
+  try {
+    const res = await axios.put(`/api/v1/jobs/like/${jobId}`);
 
-      console.log("Job liked successfully", res);
-      toast.success("Job liked successfully");
-      getJobs();
-    } catch (error) {
-      console.log("Error liking job", error);
+    // Vérifier si le job a été liké ou unliké
+    const job = jobs.find(j => j._id === jobId);
+    const wasLiked = job?.likes.includes(userProfile._id);
+
+    if (wasLiked) {
+      toast.success("Job removed from favorites");
+    } else {
+      toast.success("Job added to favorites");
     }
-  };
+    
+    getJobs();
+  } catch (error) {
+    console.log("Error toggling job like", error);
+  }
+};
 
-  // apply to a job
   const applyToJob = async (jobId) => {
     const job = jobs.find((job) => job._id === jobId);
 

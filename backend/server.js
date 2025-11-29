@@ -8,7 +8,8 @@ import fs from "fs";
 import helmet from "helmet";
 import User from "./models/UserModel.js"
 import asyncHandler from "express-async-handler";
-
+import http from "http";
+import { Server } from "socket.io";
 
 
 dotenv.config();
@@ -121,14 +122,51 @@ const server = async () => {
     }
   }
 
-  // THEN start the server
-  try {
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
+ // ---------------- SOCKET.IO SETUP ----------------
+
+
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("🟢 User connected:", socket.id);
+
+  // user joins a private room (their userId)
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log("User joined room:", userId);
+  });
+
+  socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+    // send to the receiver only
+    io.to(receiverId).emit("receiveMessage", {
+      senderId,
+      text,
+      createdAt: new Date(),
     });
-  } catch (error) {
-    console.log("Server error", error.message);
-  }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 User disconnected:", socket.id);
+  });
+});
+
+// ---------------- START SERVER ----------------
+try {
+  httpServer.listen(process.env.PORT, () => {
+    console.log(`🚀 Server with Socket.io running at http://localhost:${process.env.PORT}`);
+  });
+} catch (error) {
+  console.log("Server error", error.message);
+}
+
+
 };
 
 server();

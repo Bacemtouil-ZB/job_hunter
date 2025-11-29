@@ -153,43 +153,49 @@ function page() {
                   <span className="font-medium">{location}</span>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                    <div className="flex items-center gap-2 text-green-700 mb-1">
-                      <DollarSign size={16} />
-                      <span className="text-xs font-semibold uppercase">Salary</span>
+                {/* Stats Grid - FIXED WITH LEADING-TIGHT */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Salary Card */}
+                  <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 text-green-700 mb-6">
+                      <DollarSign size={18} />
+                      <span className="text-xs font-semibold uppercase tracking-wide">Salary</span>
                     </div>
-                    <p className="font-bold text-lg text-gray-900">
-                      {formatMoney(salary, "GBP")}
-                      <span className="text-sm font-medium text-gray-600">
+                    <div className="flex items-baseline gap-1 flex-wrap">
+                      <p className="font-bold text-2xl text-gray-900 leading-tight">
+                        {formatMoney(salary, "GBP")}
+                      </p>
+                      <span className="text-sm font-medium text-gray-600 leading-tight">
                         /{salaryType === "Yearly" ? "year" : salaryType === "Monthly" ? "month" : salaryType === "Weekly" ? "week" : "hour"}
                       </span>
-                    </p>
+                    </div>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200">
-                    <div className="flex items-center gap-2 text-purple-700 mb-1">
-                      <Calendar size={16} />
-                      <span className="text-xs font-semibold uppercase">Posted</span>
+                  {/* Posted Card */}
+                  <div className="p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 text-purple-700 mb-3">
+                      <Calendar size={18} />
+                      <span className="text-xs font-semibold uppercase tracking-wide">Posted</span>
                     </div>
-                    <p className="font-bold text-lg text-gray-900">{formatDates(createdAt)}</p>
+                    <p className="font-bold text-2xl text-gray-900 leading-tight">{formatDates(createdAt)}</p>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-                    <div className="flex items-center gap-2 text-blue-700 mb-1">
-                      <Users size={16} />
-                      <span className="text-xs font-semibold uppercase">Applicants</span>
+                  {/* Applicants Card */}
+                  <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 text-blue-700 mb-3">
+                      <Users size={18} />
+                      <span className="text-xs font-semibold uppercase tracking-wide">Applicants</span>
                     </div>
-                    <p className="font-bold text-lg text-gray-900">{applicants.length}</p>
+                    <p className="font-bold text-2xl text-gray-900 leading-tight">{applicants.length}</p>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200">
-                    <div className="flex items-center gap-2 text-orange-700 mb-1">
-                      <Briefcase size={16} />
-                      <span className="text-xs font-semibold uppercase">Type</span>
+                  {/* Job Type Card */}
+                  <div className="p-6 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 text-orange-700 mb-3">
+                      <Briefcase size={18} />
+                      <span className="text-xs font-semibold uppercase tracking-wide">Type</span>
                     </div>
-                    <p className="font-bold text-lg text-gray-900">{jobType[0]}</p>
+                    <p className="font-bold text-2xl text-gray-900 leading-tight">{jobType[0]}</p>
                   </div>
                 </div>
               </div>
@@ -213,38 +219,50 @@ function page() {
           {/* Right Sidebar - Actions & Info */}
           <div className="w-full lg:w-96 space-y-6">
             <div className="sticky top-24 space-y-6">
-              {/* Apply Button */}
-              <button
-                className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${
-                  isApplied
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
-                }`}
-                onClick={() => {
-                  if (isAuthenticated) {
-                    if (!isApplied) {
-                      applyToJob(job._id);
-                      setIsApplied(true);
-                    } else {
-                      toast.error("You have already applied to this job");
-                    }
-                  } else {
-                    router.push("http://localhost:8000/login");
-                  }
-                }}
-              >
-                {isApplied ? (
-                  <>
-                    <CheckCircle size={20} />
-                    Applied Successfully
-                  </>
-                ) : (
-                  <>
-                    Apply Now
-                    <ArrowRight size={20} />
-                  </>
+              {/* Apply Button - Only show if not the job creator */}
+                {userProfile._id !== createdBy._id && (
+                  <button
+                    className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${
+                      isApplied
+                        ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                        : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+                    }`}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        if (!isApplied) {
+                          applyToJob(job._id);
+                          setIsApplied(true);
+                        } else {
+                          toast.error("You have already applied to this job");
+                        }
+                      } else {
+                        router.push("http://localhost:8000/login");
+                      }
+                    }}
+                  >
+                    {isApplied ? (
+                      <>
+                        <CheckCircle size={20} />
+                        Applied Successfully
+                      </>
+                    ) : (
+                      <>
+                        Apply Now
+                        <ArrowRight size={20} />
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+
+              {/* Message Recruiter Button */}
+              {userProfile._id !== createdBy._id && (
+                <button
+                  className="w-full py-4 px-6 rounded-xl font-bold text-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-200 shadow-md flex items-center justify-center gap-2"
+                  onClick={() => router.push(`/chat?receiver=${createdBy._id}`)}
+                >
+                  Message Recruiter
+                </button>
+              )}
 
               {/* Other Information Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">

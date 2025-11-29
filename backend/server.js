@@ -8,12 +8,15 @@ import fs from "fs";
 import helmet from "helmet";
 import User from "./models/UserModel.js"
 import asyncHandler from "express-async-handler";
-
+import http from "http";
+import { Server } from "socket.io";
 
 
 dotenv.config();
 
 const app = express();
+console.log("DEBUG PORT =", process.env.PORT);
+
 
 // ---------------- CSP + Security Fix ----------------
 app.use(
@@ -55,30 +58,30 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(auth(config));
 //function to check if user exists in the database
-const ensureUserInDB= asyncHandler(async(user)=>{
+const ensureUserInDB = asyncHandler(async (user) => {
   try {
-    const existingUser = await User.findOne({auth0ID: user.sub});
-    if(!existingUser){
-      //create new user document
+    const existingUser = await User.findOne({ auth0Id: user.sub });
+
+    if (!existingUser) {
       const newUser = new User({
-        auth0Id : user.sub,
+        auth0Id: user.sub,
         email: user.email,
-        name: user.name,
-        role:"jobseeker",
-        profilePicture:user.picture,
+        name: user.name || user.nickname || "",
+        role: "jobseeker",
+        profilePicture: user.picture,
       });
+
       await newUser.save();
-      console.log("user added to DB",user)
-    }else{
-        console.log("user already exists in db ",existingUser)
+      console.log("User added to DB:", newUser);
+    } else {
+      console.log("User already exists in DB:", existingUser);
+    }
 
-  }
   } catch (error) {
-    console.log("error checking or adding user to db",error.message);
-
-    
-  } 
+    console.log("Error checking/adding user:", error.message);
+  }
 });
+
 
 app.get("/",async (req, res) => {
   if (req.oidc.isAuthenticated()){
@@ -97,29 +100,73 @@ app.get("/rendom", (req, res) => {
   res.json({ random: Math.random() });
 });
 
-// Auto-load routes
-const routeFiles = fs.readdirSync("./routes");
-routeFiles.forEach((file) => {
-  import(`./routes/${file}`)
-    .then((route) => {
-      app.use("/api/v1/",route.default);
-    })
-    .catch((error) => {
-      console.log("Error importing route", error);
-    });
-});
-
 // Start server
 const server = async () => {
-  await connect();
   try {
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
-    });
+    console.log("Trying to connect to MongoDB...");
+    await connect();
+    console.log("Mongo connected successfully!");
   } catch (error) {
-    console.log("Server error", error.message);
-    process.exit(1);
+    console.log("MongoDB Connection Error:", error.message);
   }
+
+  // Load routes FIRST
+  const routeFiles = fs.readdirSync("./routes");
+  for (const file of routeFiles) {
+    try {
+      const route = await import(`./routes/${file}`);
+      app.use("/api/v1/", route.default);
+      console.log(`✅ Route loaded: ${file}`);
+    } catch (error) {
+      console.log(`❌ Error loading ${file}:`, error);
+    }
+  }
+
+ // ---------------- SOCKET.IO SETUP ----------------
+
+
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("🟢 User connected:", socket.id);
+
+  // user joins a private room (their userId)
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log("User joined room:", userId);
+  });
+
+  socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+    // send to the receiver only
+    io.to(receiverId).emit("receiveMessage", {
+      senderId,
+      text,
+      createdAt: new Date(),
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 User disconnected:", socket.id);
+  });
+});
+
+// ---------------- START SERVER ----------------
+try {
+  httpServer.listen(process.env.PORT, () => {
+    console.log(`🚀 Server with Socket.io running at http://localhost:${process.env.PORT}`);
+  });
+} catch (error) {
+  console.log("Server error", error.message);
+}
+
+
 };
 
 server();

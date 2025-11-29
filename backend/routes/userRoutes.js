@@ -1,5 +1,5 @@
 import express from "express";
-import { getUserProfile } from "../controllers/userController";
+import { getUserProfile } from "../controllers/userController.js";
 const router = express.Router();
 
 router.get("/check-auth", (req, res) => {

@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  use,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const GlobalContext = createContext();
 
@@ -40,13 +47,10 @@ export const GlobalContextProvider = ({ children }) => {
       } finally {
         setLoading(false);
       }
-
-
     };
 
     checkAuth();
   }, []);
-
 
   const getUserProfile = async (id) => {
     try {
@@ -71,6 +75,22 @@ export const GlobalContextProvider = ({ children }) => {
     setSalary(e.target.value);
   };
 
+  const resetJobForm = () => {
+    setJobTitle("");
+    setJobDescription("");
+    setSalary(0);
+    setActiveEmploymentTypes([]);
+    setSalaryType("Year");
+    setNegotiable(false);
+    setTags([]);
+    setSkills([]);
+    setLocation({
+      country: "",
+      city: "",
+      address: "",
+    });
+  };
+
   useEffect(() => {
     if (isAuthenticated && auth0User) {
       getUserProfile(auth0User.sub);
@@ -78,34 +98,39 @@ export const GlobalContextProvider = ({ children }) => {
   }, [isAuthenticated, auth0User]);
 
   return (
-    <GlobalContext.Provider value={{
-      isAuthenticated,
-      auth0User,
-      userProfile,
-      getUserProfile,
-      loading,
-      jobTitle,
-      jobDescription,
-      salary,
-      activeEmploymentTypes,
-      salaryType,
-      negotiable,
-      tags,
-      skills,
-      location,
-      handleTitleChange,
-      handleDescriptionChange,
-      handleSalaryChange,
-      setActiveEmploymentTypes,
-      setJobDescription,
-      setSalaryType,
-      setNegotiable,
-    }}>
+    <GlobalContext.Provider
+      value={{
+        isAuthenticated,
+        auth0User,
+        userProfile,
+        getUserProfile,
+        loading,
+        jobTitle,
+        jobDescription,
+        salary,
+        activeEmploymentTypes,
+        salaryType,
+        negotiable,
+        tags,
+        skills,
+        location,
+        handleTitleChange,
+        handleDescriptionChange,
+        handleSalaryChange,
+        setActiveEmploymentTypes,
+        setJobDescription,
+        setSalaryType,
+        setNegotiable,
+        setTags,
+        setSkills,
+        setLocation,
+        resetJobForm,
+      }}
+    >
       {children}
     </GlobalContext.Provider>
   );
-
-}
+};
 
 export const useGlobalContext = () => {
   return useContext(GlobalContext);

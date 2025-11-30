@@ -1,5 +1,9 @@
 "use client";
 import Footer from "@/components/footer";
+import JobMatchBadge from '@/components/JobMatchBadge';
+import JobMatchDetails from '@/components/JobMatchDetails';
+import axios from 'axios';
+
 import Header from "@/components/header";
 import JobCard from "@/components/JobItem/JobCard";
 import { useGlobalContext } from "@/context/globalContext";
@@ -39,6 +43,26 @@ function page() {
 
   const job = jobs.find((job: Job) => job._id === id);
   const otherJobs = jobs.filter((job: Job) => job._id !== id);
+  const [matchData, setMatchData] = React.useState<any>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  useEffect(() => {
+  const fetchMatch = async () => {
+    if (job && isAuthenticated && userProfile.role === "jobseeker") {
+      try {
+        const response = await axios.get(
+          `${API_URL}/job-match/job/${job._id}`,
+          { withCredentials: true }
+        );
+        setMatchData(response.data.match);
+      } catch (error) {
+        console.error("Failed to fetch match:", error);
+      }
+    }
+  };
+
+  fetchMatch();
+}, [job, isAuthenticated, userProfile.role]);
+
 
   useEffect(() => {
     if (job) {
@@ -327,6 +351,25 @@ function page() {
                   ))}
                 </div>
               </div>
+{matchData && userProfile.role === 'jobseeker' && (
+  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+        <CheckCircle size={12} className="text-white" />
+      </div>
+      Job Match Score
+    </h3>
+
+    <JobMatchBadge
+      percentage={matchData.matchPercentage}
+      size="lg"
+    />
+
+    <div className="mt-4">
+      <JobMatchDetails matchData={matchData} />
+    </div>
+  </div>
+)}
 
               {/* Skills Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">

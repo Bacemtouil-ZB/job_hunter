@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGlobalContext } from "@/context/globalContext";
@@ -20,6 +20,7 @@ function Profile() {
   const { profilePicture, name, profession, email } = userProfile;
 
   const router = useRouter();
+  
   return (
     <div>
       <DropdownMenu>
@@ -47,10 +48,21 @@ function Profile() {
 
         <DropdownMenuSeparator />
 
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onClick={() => {
+            router.push("/profile");
+          }}
+        >
+          <User className="mr-2 h-4 w-4" />
+          <span>My Profile</span>
+        </DropdownMenuItem>
+
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        
         <DropdownMenuItem
           className="cursor-pointer"
           onClick={() => {
@@ -65,5 +77,4 @@ function Profile() {
     </div>
   )
 }
-
 export default Profile

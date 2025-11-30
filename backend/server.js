@@ -11,7 +11,9 @@ import asyncHandler from "express-async-handler";
 import http from "http";
 import { Server } from "socket.io";
 
-
+import profileRoutes from './routes/profile.js';
+import cvRoutes from './routes/cv.js';
+import jobMatchRoutes from './routes/jobMatcher.js';
 dotenv.config();
 
 const app = express();
@@ -53,10 +55,14 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(auth(config));
+app.use('/api/profile', profileRoutes);
+app.use('/api/cv', cvRoutes);
+app.use('/api/job-match', jobMatchRoutes);
 //function to check if user exists in the database
 const ensureUserInDB = asyncHandler(async (user) => {
   try {

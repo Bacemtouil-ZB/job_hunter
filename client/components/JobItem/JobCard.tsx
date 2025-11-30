@@ -5,10 +5,11 @@ import { Job } from "@/types/types";
 import { Calendar, Bookmark, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Separator } from "../ui/separator";
 import { formatDates } from "@/utils/fotmatDates";
-import { bookmark, bookmarkEmpty } from "@/utils/icons";
+import JobMatchBadge from '../JobMatchBadge';
+import axios from 'axios';
 
 interface JobProps {
   job: Job;
@@ -18,7 +19,33 @@ interface JobProps {
 function JobCard({ job, activeJob }: JobProps) {
   const { likeJob } = useJobsContext();
   const { userProfile, isAuthenticated } = useGlobalContext();
+
   const [isLiked, setIsLiked] = React.useState(false);
+
+  // ---------------------------
+  // 🔥 MATCH DATA ADDED HERE
+  // ---------------------------
+  const [matchData, setMatchData] = useState<any>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+  useEffect(() => {
+    const fetchMatch = async () => {
+      if (isAuthenticated && userProfile.role === "jobseeker") {
+        try {
+          const response = await axios.get(
+            `${API_URL}/job-match/job/${job._id}`,
+            { withCredentials: true }
+          );
+          setMatchData(response.data.match);
+        } catch (error) {
+          console.error("Failed to fetch match:", error);
+        }
+      }
+    };
+    fetchMatch();
+  }, [job._id, isAuthenticated, userProfile.role]);
+
+  // ---------------------------
 
   const {
     title,
@@ -69,22 +96,21 @@ function JobCard({ job, activeJob }: JobProps) {
           : "bg-white hover:shadow-xl border border-gray-100 hover:border-indigo-200"
       }`}
     >
-      {/* Gradient accent bar */}
       <div className={`h-1 ${
-        activeJob 
+        activeJob
           ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
           : "bg-gradient-to-r from-gray-200 to-gray-300 group-hover:from-indigo-500 group-hover:via-purple-500 group-hover:to-pink-500"
-      } transition-all duration-300`}></div>
+      }`}></div>
 
       <div className="p-6">
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div
-            className="group/title flex gap-3 items-start cursor-pointer flex-1"
+            className="flex gap-3 items-start cursor-pointer flex-1"
             onClick={() => router.push(`/job/${job._id}`)}
           >
             <div className="relative flex-shrink-0">
-              <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center ring-2 ring-gray-100 group-hover:ring-indigo-200 transition-all duration-300 overflow-hidden">
+              <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center ring-2 ring-gray-100 overflow-hidden">
                 <Image
                   src={profilePicture || "/user.png"}
                   alt={name || "User"}
@@ -93,12 +119,12 @@ function JobCard({ job, activeJob }: JobProps) {
                   className="rounded-xl object-cover"
                 />
               </div>
-              {/* Online indicator */}
+
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
 
             <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <h4 className="font-bold text-lg text-gray-900 group-hover/title:text-indigo-600 transition-colors duration-200 line-clamp-1">
+              <h4 className="font-bold text-lg text-gray-900 line-clamp-1">
                 {title}
               </h4>
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -115,18 +141,18 @@ function JobCard({ job, activeJob }: JobProps) {
             </div>
           </div>
 
-          {/* Bookmark Button */}
+          {/* Bookmark */}
           <button
-            className={`flex-shrink-0 p-2.5 rounded-xl transition-all duration-200 ${
+            className={`p-2.5 rounded-xl ${
               isLiked
                 ? "bg-indigo-100 text-indigo-600"
                 : "bg-gray-50 text-gray-400 hover:bg-gray-100"
             }`}
-            onClick={() => {
+            onClick={() =>
               isAuthenticated
                 ? handleLike(job._id)
-                : router.push("http://localhost:8000/login");
-            }}
+                : router.push("http://localhost:8000/login")
+            }
           >
             <Bookmark size={18} className={isLiked ? "fill-current" : ""} />
           </button>
@@ -146,20 +172,21 @@ function JobCard({ job, activeJob }: JobProps) {
           ))}
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-gray-600 leading-relaxed mb-4">
-          {companyDescription.length > 100
-            ? `${companyDescription.substring(0, 100)}...`
-            : companyDescription}
-        </p>
+        {/* ------------------------------ */}
+        {/* 🔥 MATCH BADGE ADDED HERE       */}
+        {/* ------------------------------ */}
+        {matchData && (
+          <div className="mb-4">
+            <JobMatchBadge percentage={matchData.matchPercentage} size="sm" />
+          </div>
+        )}
 
         <Separator className="my-4" />
 
-        {/* Footer Info */}
+        {/* Footer */}
         <div className="flex justify-between items-center gap-4">
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-bold text-gray-900">
-              {/* {formatMoney(salary, "GBP")} */}
               £{salary.toLocaleString()}
             </span>
             <span className="text-sm font-medium text-gray-500">
@@ -180,9 +207,6 @@ function JobCard({ job, activeJob }: JobProps) {
           </div>
         </div>
       </div>
-
-      {/* Hover gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </div>
   );
 }

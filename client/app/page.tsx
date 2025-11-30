@@ -147,7 +147,7 @@ export default function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white/50 backdrop-blur-sm border-y border-gray-200">
+      <section className="py-16 bg-gradient-to-br from-indigo-50 to-purple-50 backdrop-blur-sm border-y border-gray-200">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (

@@ -27,16 +27,7 @@ function JobLocation() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-          <MapPin size={20} className="text-white" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">Job Location</h3>
-          <p className="text-sm text-gray-600">Specify where this job is located</p>
-        </div>
-      </div>
+      
 
       {/* Location Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

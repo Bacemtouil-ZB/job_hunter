@@ -45,12 +45,6 @@ function JobTitle() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex-1">
           <h3 className="text-lg font-semibold">Job Title</h3>
-          <Label
-            htmlFor="jobTitle"
-            className="text-sm text-muted-foreground mt-2"
-          >
-            A job title is a specific designation of a post in an organization.
-          </Label>
         </div>
         <Input
           type="text"

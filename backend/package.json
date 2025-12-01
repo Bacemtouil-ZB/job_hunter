@@ -28,6 +28,9 @@
     "helmet": "^8.1.0",
     "mongodb": "4.1",
     "mongoose": "^8.20.1",
-    "nodemon": "^3.1.11"
+    "natural": "^8.1.0",
+    "nodemon": "^3.1.11",
+    "pdfkit": "^0.17.2",
+    "socket.io": "^4.8.1"
   }
 }

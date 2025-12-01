@@ -8,13 +8,19 @@ import fs from "fs";
 import helmet from "helmet";
 import User from "./models/UserModel.js";
 import asyncHandler from "express-async-handler";
+import http from "http";
+import { Server } from "socket.io";
+
+// NEW: Import manually loaded routes
+import profileRoutes from './routes/profile.js';
+import cvRoutes from './routes/cv.js';
+import jobMatchRoutes from './routes/jobMatcherRoutes.js';
 
 dotenv.config();
 
 const app = express();
-console.log("DEBUG PORT =", process.env.PORT);
 
-// ---------------- CSP + Security Fix ----------------
+// ---------------- CSP + Security ----------------
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -31,7 +37,7 @@ app.use(
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => {
   res.json({});
 });
-// ----------------------------------------------------
+// -------------------------------------------------
 
 const config = {
   authRequired: false,
@@ -42,7 +48,7 @@ const config = {
   issuerBaseURL: process.env.ISSUERBASEURL,
 };
 
-// Middlewares
+// ---------------- MIDDLEWARES ----------------
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -53,7 +59,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(auth(config));
-//function to check if user exists in the database
+
+// ---------------- HELPER FUNCTIONS ----------------
 const ensureUserInDB = asyncHandler(async (user) => {
   try {
     const existingUser = await User.findOne({ auth0Id: user.sub });
@@ -66,7 +73,6 @@ const ensureUserInDB = asyncHandler(async (user) => {
         role: "jobseeker",
         profilePicture: user.picture,
       });
-
       await newUser.save();
       console.log("User added to DB:", newUser);
     } else {
@@ -77,11 +83,10 @@ const ensureUserInDB = asyncHandler(async (user) => {
   }
 });
 
+// ---------------- ROUTES ----------------
 app.get("/", async (req, res) => {
   if (req.oidc.isAuthenticated()) {
-    //check if auth0 user exists in the db
     await ensureUserInDB(req.oidc.user);
-    //redirect to the frontend
     return res.redirect(process.env.CLIENT_URL);
   } else {
     return res.send("logged out");
@@ -93,7 +98,7 @@ app.get("/rendom", (req, res) => {
   res.json({ random: Math.random() });
 });
 
-// Start server
+// ---------------- SERVER START ----------------
 const server = async () => {
   try {
     console.log("Trying to connect to MongoDB...");
@@ -103,9 +108,25 @@ const server = async () => {
     console.log("MongoDB Connection Error:", error.message);
   }
 
-  // Load routes FIRST
+  // 🔹 NEW: Manually loaded routes FIRST
+  app.use('/api/profile', profileRoutes);
+  console.log('✅ Profile routes loaded at /api/profile');
+  
+  app.use('/api/cv', cvRoutes);
+  console.log('✅ CV routes loaded at /api/cv');
+  
+  app.use('/api/job-match', jobMatchRoutes);
+  console.log('✅ Job Match routes loaded at /api/job-match');
+
+  // 🔹 Dynamic routes (skip manually loaded ones)
   const routeFiles = fs.readdirSync("./routes");
   for (const file of routeFiles) {
+    // Skip manually loaded routes
+    if (['profile.js', 'cv.js', 'jobMatcherRoutes.js'].includes(file)) {
+      console.log(`⏭️ Skipping ${file} (already loaded manually)`);
+      continue;
+    }
+    
     try {
       const route = await import(`./routes/${file}`);
       app.use("/api/v1/", route.default);
@@ -115,10 +136,41 @@ const server = async () => {
     }
   }
 
-  // THEN start the server
+  // ---------------- SOCKET.IO SETUP ----------------
+  const httpServer = http.createServer(app);
+  const io = new Server(httpServer, {
+    cors: { origin: process.env.CLIENT_URL, credentials: true },
+  });
+
+  io.on("connection", (socket) => {
+    console.log("🟢 User connected:", socket.id);
+
+    socket.on("join", (userId) => {
+      socket.join(userId);
+      console.log("User joined room:", userId);
+    });
+
+    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+      io.to(receiverId).emit("receiveMessage", {
+        senderId,
+        text,
+        createdAt: new Date(),
+      });
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔴 User disconnected:", socket.id);
+    });
+  });
+
+  // ---------------- START SERVER ----------------
   try {
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
+    httpServer.listen(process.env.PORT, () => {
+      console.log(`🚀 Server with Socket.io running at http://localhost:${process.env.PORT}`);
+      console.log(`📍 API Routes available:`);
+      console.log(`   - Profile: http://localhost:${process.env.PORT}/api/profile`);
+      console.log(`   - CV: http://localhost:${process.env.PORT}/api/cv/generate`);
+      console.log(`   - Job Match: http://localhost:${process.env.PORT}/api/job-match`);
     });
   } catch (error) {
     console.log("Server error", error.message);

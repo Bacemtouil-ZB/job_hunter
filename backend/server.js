@@ -6,17 +6,13 @@ import cors from "cors";
 import connect from "./DB/config.js";
 import fs from "fs";
 import helmet from "helmet";
-import User from "./models/UserModel.js"
+import User from "./models/UserModel.js";
 import asyncHandler from "express-async-handler";
-import http from "http";
-import { Server } from "socket.io";
-
 
 dotenv.config();
 
 const app = express();
 console.log("DEBUG PORT =", process.env.PORT);
-
 
 // ---------------- CSP + Security Fix ----------------
 app.use(
@@ -76,21 +72,18 @@ const ensureUserInDB = asyncHandler(async (user) => {
     } else {
       console.log("User already exists in DB:", existingUser);
     }
-
   } catch (error) {
     console.log("Error checking/adding user:", error.message);
   }
 });
 
-
-app.get("/",async (req, res) => {
-  if (req.oidc.isAuthenticated()){
+app.get("/", async (req, res) => {
+  if (req.oidc.isAuthenticated()) {
     //check if auth0 user exists in the db
     await ensureUserInDB(req.oidc.user);
     //redirect to the frontend
     return res.redirect(process.env.CLIENT_URL);
-
-  }else{
+  } else {
     return res.send("logged out");
   }
 });
@@ -122,51 +115,14 @@ const server = async () => {
     }
   }
 
- // ---------------- SOCKET.IO SETUP ----------------
-
-
-const httpServer = http.createServer(app);
-
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-  },
-});
-
-io.on("connection", (socket) => {
-  console.log("🟢 User connected:", socket.id);
-
-  // user joins a private room (their userId)
-  socket.on("join", (userId) => {
-    socket.join(userId);
-    console.log("User joined room:", userId);
-  });
-
-  socket.on("sendMessage", ({ senderId, receiverId, text }) => {
-    // send to the receiver only
-    io.to(receiverId).emit("receiveMessage", {
-      senderId,
-      text,
-      createdAt: new Date(),
+  // THEN start the server
+  try {
+    app.listen(process.env.PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
     });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
-  });
-});
-
-// ---------------- START SERVER ----------------
-try {
-  httpServer.listen(process.env.PORT, () => {
-    console.log(`🚀 Server with Socket.io running at http://localhost:${process.env.PORT}`);
-  });
-} catch (error) {
-  console.log("Server error", error.message);
-}
-
-
+  } catch (error) {
+    console.log("Server error", error.message);
+  }
 };
 
 server();

@@ -61,6 +61,20 @@ function page() {
           >
             Liked Jobs
           </button>
+          <button
+            className={`border border-gray-400 px-8 py-2 rounded-full font-medium
+          ${
+            activeTab === "dashboard"
+              ? "border-transparent bg-[#7263F3] text-white"
+              : "border-gray-400"
+          }`}
+            onClick={() => {
+              setActiveTab("dashboard");
+              router.push('/dashboard');
+            }}
+          >
+            Dashboard
+          </button>
         </div>
 
         {activeTab === "posts" && userJobs.length === 0 && (
@@ -72,6 +86,11 @@ function page() {
         {activeTab === "likes" && likedJobs.length === 0 && (
           <div className="mt-8 flex items-center">
             <p className="text-2xl font-bold">No liked jobs found.</p>
+          </div>
+        )}
+        {activeTab === "dashboard" && (
+          <div className="mt-8 flex items-center">
+            <p className="text-2xl font-bold">Dashboard content goes here.</p>
           </div>
         )}
 

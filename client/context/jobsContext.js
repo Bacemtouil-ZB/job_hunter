@@ -23,7 +23,6 @@ export const JobsContextProvider = ({ children }) => {
     title: "",
   });
 
-  //filters
   const [filters, setFilters] = useState({
     fullTime: false,
     partTime: false,
@@ -32,11 +31,22 @@ export const JobsContextProvider = ({ children }) => {
     fullStack: false,
     backend: false,
     devOps: false,
-    uiux: false,
+    uiUx: false,
   });
 
-  const [minSalary, setMinSalary] = useState(30000);
-  const [maxSalary, setMaxSalary] = useState(120000);
+  const [minSalary, setMinSalary] = useState(0);
+  const [maxSalary, setMaxSalary] = useState(50000);
+
+  const handleFilterChange = (filterId) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterId]: !prev[filterId],
+    }));
+  };
+
+  const handleSearchChange = (searchName, value) => {
+    setSearchQuery((prev) => ({ ...prev, [searchName]: value }));
+  };
 
   const getJobs = async () => {
     setLoading(true);
@@ -59,7 +69,7 @@ export const JobsContextProvider = ({ children }) => {
       setJobs((prevJobs) => [res.data, ...prevJobs]);
 
       // update userJobs
-      if (userProfile._id) {
+      if (userProfile?._id) {
         setUserJobs((prevUserJobs) => [res.data, ...prevUserJobs]);
         await getUserJobs(userProfile._id);
       }
@@ -78,7 +88,6 @@ export const JobsContextProvider = ({ children }) => {
       const res = await axios.get("/api/v1/jobs/user/" + userId);
 
       setUserJobs(res.data);
-      setLoading(false);
     } catch (error) {
       console.log("Error getting user jobs", error);
     } finally {
@@ -86,23 +95,50 @@ export const JobsContextProvider = ({ children }) => {
     }
   };
 
-  const searchJobs = async (tags, location, title) => {
+  // Unified search: if args provided use them, otherwise use searchQuery + filters
+  const searchJobs = async (tagsArg, locationArg, titleArg) => {
     setLoading(true);
     try {
-      // build query string
-      const query = new URLSearchParams();
+      const queryParams = new URLSearchParams();
 
-      if (tags) query.append("tags", tags);
-      if (location) query.append("location", location);
-      if (title) query.append("title", title);
+      const usingArgs = tagsArg || locationArg || titleArg;
 
-      // send the request
+      if (usingArgs) {
+        if (tagsArg) queryParams.append("tags", tagsArg);
+        if (locationArg) queryParams.append("location", locationArg);
+        if (titleArg) queryParams.append("title", titleArg);
+      } else {
+        const jobTypes = [];
+        if (filters.fullTime) jobTypes.push("Full Time");
+        if (filters.partTime) jobTypes.push("Part Time");
+        if (filters.contract) jobTypes.push("Contract");
+        if (filters.internship) jobTypes.push("Internship");
 
-      const res = await axios.get(`/api/v1/jobs/search?${query.toString()}`);
+        const tagList = [];
+        if (filters.fullStack)
+          tagList.push("full-stack", "fullstack", "full stack");
+        if (filters.backend) tagList.push("backend", "back-end");
+        if (filters.devOps) tagList.push("devops", "dev-ops");
+        if (filters.uiUx) tagList.push("ui-ux", "uiux", "ui/ux");
 
-      // set jobs to the response data
+        if (searchQuery.title) queryParams.append("title", searchQuery.title);
+        if (searchQuery.location)
+          queryParams.append("location", searchQuery.location);
+        if (searchQuery.tags) queryParams.append("tags", searchQuery.tags);
+
+        if (jobTypes.length > 0)
+          queryParams.append("jobTypes", JSON.stringify(jobTypes));
+        if (tagList.length > 0)
+          queryParams.append("tags", JSON.stringify(tagList));
+
+        if (minSalary > 0) queryParams.append("minSalary", minSalary);
+        if (maxSalary < 50000) queryParams.append("maxSalary", maxSalary);
+      }
+
+      const res = await axios.get(
+        `/api/v1/jobs/search?${queryParams.toString()}`
+      );
       setJobs(res.data);
-      setLoading(false);
     } catch (error) {
       console.log("Error searching jobs", error);
     } finally {
@@ -110,13 +146,10 @@ export const JobsContextProvider = ({ children }) => {
     }
   };
 
-  // get job by id
   const getJobById = async (id) => {
     setLoading(true);
     try {
       const res = await axios.get(`/api/v1/jobs/${id}`);
-
-      setLoading(false);
       return res.data;
     } catch (error) {
       console.log("Error getting job by id", error);
@@ -147,45 +180,40 @@ const likeJob = async (jobId) => {
   }
 };
 
-  const applyToJob = async (jobId) => {
-    const job = jobs.find((job) => job._id === jobId);
 
-    if (job && job.applicants.includes(userProfile._id)) {
+  const applyToJob = async (jobId) => {
+    const job = jobs.find((j) => j._id === jobId);
+
+    if (
+      job &&
+      userProfile &&
+      job.applicants &&
+      job.applicants.includes(userProfile._id)
+    ) {
       toast.error("You have already applied to this job");
       return;
     }
 
     try {
-      const res = await axios.put(`/api/v1/jobs/apply/${jobId}`);
-
+      await axios.put(`/api/v1/jobs/apply/${jobId}`);
       toast.success("Applied to job successfully");
-      getJobs();
+      await getJobs();
     } catch (error) {
       console.log("Error applying to job", error);
-      toast.error(error.response.data.message);
+      if (error?.response?.data?.message)
+        toast.error(error.response.data.message);
     }
   };
 
-  // delete a job
   const deleteJob = async (jobId) => {
     try {
       await axios.delete(`/api/v1/jobs/${jobId}`);
       setJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
       setUserJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
-
       toast.success("Job deleted successfully");
     } catch (error) {
       console.log("Error deleting job", error);
     }
-  };
-
-  //
-  const handleSearchChange = (searchName, value) => {
-    setSearchQuery((prev) => ({ ...prev, [searchName]: value }));
-  };
-
-  const handleFilterChange = (filterName) => {
-    setFilters((prev) => ({ ...prev, [filterName]: !prev[filterName] }));
   };
 
   useEffect(() => {
@@ -193,34 +221,39 @@ const likeJob = async (jobId) => {
   }, []);
 
   useEffect(() => {
-    if (userProfile._id) {
+    if (userProfile?._id) {
       getUserJobs(userProfile._id);
-      getUserProfile(userProfile.auth0Id);
+      if (userProfile?.auth0Id) getUserProfile(userProfile.auth0Id);
     }
-  }, [userProfile._id]);
+  }, [userProfile?._id]);
 
   return (
     <JobsContext.Provider
       value={{
         jobs,
+        setJobs,
         loading,
-        createJob,
+        setLoading,
         userJobs,
+        setUserJobs,
+        searchQuery,
+        setSearchQuery,
+        filters,
+        setFilters,
+        handleFilterChange,
+        handleSearchChange,
+        minSalary,
+        setMinSalary,
+        maxSalary,
+        setMaxSalary,
+        getJobs,
+        createJob,
+        getUserJobs,
         searchJobs,
         getJobById,
         likeJob,
         applyToJob,
         deleteJob,
-        handleSearchChange,
-        searchQuery,
-        setSearchQuery,
-        handleFilterChange,
-        filters,
-        minSalary,
-        setMinSalary,
-        maxSalary,
-        setMaxSalary,
-        setFilters,
       }}
     >
       {children}

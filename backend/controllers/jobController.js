@@ -89,22 +89,79 @@ export const getJobsByUser = asyncHandler(async (req, res) => {
 //search jobs 
 export const searchJobs = asyncHandler(async (req, res) => {
   try {
-    const { tags, location, title } = req.query;
+    const { tags, location, title, jobTypes, skillTags, minSalary, maxSalary } = req.query;
+    
     let query = {};
-    if (tags) {
-      query.tags = { $in: tags.split(",") };
-    }
-    if (location) {
-      query.location = { $regex: location, $options: "i" };
-    }
+
+    // ✅ Recherche par titre
     if (title) {
       query.title = { $regex: title, $options: "i" };
     }
 
-    const jobs = await Job.find(query).populate(
-      "createdBy",
-      "name profilePicture"
-    );
+    // ✅ Recherche par localisation
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
+
+    // ✅ Recherche par tags (barre de recherche)
+    if (tags) {
+      query.$or = [
+        { tags: { $in: tags.split(",") } },
+        { skills: { $in: tags.split(",") } }
+      ];
+    }
+
+    // ✅ Filtrer par Job Type (Full Time, Part Time, etc.)
+    if (jobTypes) {
+      try {
+        const types = JSON.parse(jobTypes);
+        if (types.length > 0) {
+          // Match any job that has at least one of the selected types
+          query.jobType = { $in: types };
+        }
+      } catch (e) {
+        console.log("Error parsing jobTypes:", e);
+      }
+    }
+
+    // ✅ Filtrer par Skills/Tags (Full Stack, Backend, DevOps, UI/UX)
+    if (skillTags) {
+      try {
+        const skills = JSON.parse(skillTags);
+        if (skills.length > 0) {
+          // Match jobs that have at least one of the selected skills in tags OR skills array
+          query.$or = [
+            { tags: { $in: skills } },
+            { skills: { $in: skills } }
+          ];
+        }
+      } catch (e) {
+        console.log("Error parsing skillTags:", e);
+      }
+    }
+
+    // ✅ Filtrer par Salary Range
+    if (minSalary || maxSalary) {
+      query.salary = {};
+      
+      if (minSalary && minSalary > 0) {
+        query.salary.$gte = Number(minSalary);
+      }
+      
+      if (maxSalary && maxSalary < 50000) {
+        query.salary.$lte = Number(maxSalary);
+      }
+    }
+
+    // Recherche avec populate
+    const jobs = await Job.find(query)
+      .populate("createdBy", "name profilePicture")
+      .sort({ createdAt: -1 });
+
+    // Log pour debug
+    console.log("Search query:", query);
+    console.log("Found jobs:", jobs.length);
+
     return res.status(200).json(jobs);
 
   } catch (error) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useGlobalContext } from "@/context/globalContext";
-import { LogIn, UserPlus, Briefcase, Search, PlusCircle } from "lucide-react";
+import { LogIn, UserPlus, Briefcase, Search, PlusCircle, LayoutDashboard } from "lucide-react";
 import Profile from "./profile";
 
 function Header() {
@@ -15,6 +15,8 @@ function Header() {
     { href: "/findwork", label: "Find Work", icon: Search },
     { href: "/myjobs", label: "My Jobs", icon: Briefcase },
     { href: "/post", label: "Post a Job", icon: PlusCircle },
+    {href: "/dashboard", label: "dashbord",  icon: LayoutDashboard},
+
   ];
 
   return (

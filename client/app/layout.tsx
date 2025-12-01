@@ -2,7 +2,6 @@ import "./globals.css";
 import ContextProvider from "@/providers/contextProvider";
 import { Roboto } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import { SocketProvider } from "@/context/SocketContext"; 
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -27,13 +26,7 @@ export default function RootLayout({
       </head>
       <body className={`${roboto.className} antialiased`}>
         <Toaster position="top-center" />
-
-        {/*  Socket connecté partout */}
-        <SocketProvider>
-          <ContextProvider>
-            {children}
-          </ContextProvider>
-        </SocketProvider>
+        <ContextProvider>{children}</ContextProvider>
       </body>
     </html>
   );

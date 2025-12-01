@@ -7,11 +7,10 @@ import SearchForm from "@/components/SearchForm";
 import { useJobsContext } from "@/context/jobsContext";
 import { Job } from "@/types/types";
 import { grip, list, table } from "@/utils/icons";
-import Image from "next/image";
 import React from "react";
 
-function page() {
-const { jobs = [], filters = {} } = useJobsContext();
+function Page() {
+  const { jobs = [], filters = {} } = useJobsContext();
   const [columns, setColumns] = React.useState(3);
 
   // cycle through 1, 2, 3 columns
@@ -26,23 +25,24 @@ const { jobs = [], filters = {} } = useJobsContext();
   };
 
   const filteredJobs =
-  filters.fullTime ||
-  filters.partTime ||
-  filters.contract ||
-  filters.internship ? 
-    jobs.filter((job: Job) => {
-      if (filters.fullTime && job.jobType.includes("Full Time")) return true;
-      if (filters.partTime && job.jobType.includes("Part Time")) return true;
-      if (filters.contract && job.jobType.includes("Contract")) return true;
-      if (filters.internship && job.jobType.includes("Internship")) return true;
+    filters.fullTime ||
+    filters.partTime ||
+    filters.contract ||
+    filters.internship
+      ? jobs.filter((job: Job) => {
+          if (filters.fullTime && job.jobType.includes("Full Time")) return true;
+          if (filters.partTime && job.jobType.includes("Part Time")) return true;
+          if (filters.contract && job.jobType.includes("Contract")) return true;
+          if (filters.internship && job.jobType.includes("Internship")) return true;
 
-      if (filters.fullStack && job.tags.includes("Full Stack")) return true;
-      if (filters.backend && job.tags.includes("Backend")) return true;
-      if (filters.devOps && job.tags.includes("DevOps")) return true;
-      if (filters.uiUx && job.tags.includes("UI/UX")) return true;
-    })
-  : jobs;
+          if (filters.fullStack && job.tags.includes("Full Stack")) return true;
+          if (filters.backend && job.tags.includes("Backend")) return true;
+          if (filters.devOps && job.tags.includes("DevOps")) return true;
+          if (filters.uiUx && job.tags.includes("UI/UX")) return true;
 
+          return false;
+        })
+      : jobs;
 
   return (
     <main>
@@ -54,7 +54,7 @@ const { jobs = [], filters = {} } = useJobsContext();
         </h1>
 
         <div className="pb-8 relative z-10">
-         <SearchForm />
+          <SearchForm />
         </div>
       </div>
 
@@ -90,9 +90,7 @@ const { jobs = [], filters = {} } = useJobsContext();
             }`}
           >
             {jobs.length > 0 ? (
-              filteredJobs.map((job: Job) => (
-                <JobCard key={job._id} job={job} />
-              ))
+              filteredJobs.map((job: Job) => <JobCard key={job._id} job={job} />)
             ) : (
               <div className="mt-1 flex items-center">
                 <p className="text-2xl font-bold">No Jobs Found!</p>
@@ -107,4 +105,4 @@ const { jobs = [], filters = {} } = useJobsContext();
   );
 }
 
-export default page;
+export default Page;

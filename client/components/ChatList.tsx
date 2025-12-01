@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 // Recruiter dummy for demo
-const recruiter = { _id: "recruiter1", name: "Recruiter John" };
+const recruiter = { _id: "69261a2b0229a39fa77cabb7", name: "touil bacem" };
+
 
 export default function ChatList({ user, setCurrentConversation }: any) {
   const [conversation, setConversation] = useState<any>(null);

@@ -15,6 +15,8 @@ import {
   ArrowRight,
   Sparkles
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 function JobForm() {
   const {
@@ -30,6 +32,7 @@ function JobForm() {
     resetJobForm,
   } = useGlobalContext();
   const { createJob } = useJobsContext();
+  const router = useRouter(); // Add this line
 
   const sections = [
     { id: "About", label: "About", icon: FileText },
@@ -39,6 +42,7 @@ function JobForm() {
   ];
   
   const [currentSection, setCurrentSection] = React.useState(sections[0].id);
+  const [isSubmitting, setIsSubmitting] = React.useState(false); // Add loading state
 
   const handleSectionChange = (section: string) => {
     setCurrentSection(section);
@@ -72,23 +76,52 @@ function JobForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => { // Make async
     e.preventDefault();
-    createJob({
-      title: jobTitle,
-      description: jobDescription,
-      salaryType,
-      jobType: activeEmploymentTypes,
-      salary,
-      location: `${location.address ? location.address + ", " : ""}${
-        location.city ? location.city + ", " : ""
-      }${location.country}`,
-      skills,
-      negotiable,
-      tags,
-    });
+    setIsSubmitting(true);
 
-    resetJobForm();
+    try {
+      // Create job data object
+      const jobData = {
+        title: jobTitle,
+        description: jobDescription,
+        salaryType,
+        jobType: activeEmploymentTypes,
+        salary,
+        location: `${location.address ? location.address + ", " : ""}${
+          location.city ? location.city + ", " : ""
+        }${location.country}`,
+        skills,
+        negotiable,
+        tags,
+      };
+
+      // Call createJob and wait for the result
+      const result = await createJob(jobData);
+      
+      if (result && result.success) {
+        toast.success("Job posted successfully!");
+        
+        // Reset the form
+        resetJobForm();
+        
+        // Redirect to the new job page or My Jobs page
+        if (result.job && result.job._id) {
+          // Option 1: Redirect to the new job page
+          router.push(`/job/${result.job._id}`);
+        } else {
+          // Option 2: Redirect to My Jobs page
+          router.push('/myjobs');
+        }
+      } else {
+        toast.error("Failed to post job. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error posting job:", error);
+      toast.error("Failed to post job. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getCurrentIndex = () => sections.findIndex(s => s.id === currentSection);
@@ -280,10 +313,22 @@ function JobForm() {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    disabled={isSubmitting}
+                    className={`px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold text-sm transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 ${
+                      isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
                   >
-                    <CheckCircle size={18} />
-                    Post Job
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Posting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={18} />
+                        Post Job
+                      </>
+                    )}
                   </button>
                 )}
               </div>

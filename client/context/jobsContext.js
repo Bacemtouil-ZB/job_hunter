@@ -52,9 +52,10 @@ export const JobsContextProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await axios.get("/api/v1/jobs");
-      setJobs(res.data);
+      setJobs(res.data || []);
     } catch (error) {
       console.log("Error getting jobs", error);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -66,19 +67,31 @@ export const JobsContextProvider = ({ children }) => {
 
       toast.success("Job created successfully");
 
-      setJobs((prevJobs) => [res.data, ...prevJobs]);
+      // FIXED: Safely update jobs array
+      setJobs((prevJobs) => {
+        const currentJobs = Array.isArray(prevJobs) ? prevJobs : [];
+        return [res.data, ...currentJobs];
+      });
 
-      // update userJobs
+      // FIXED: Safely update userJobs array
       if (userProfile?._id) {
-        setUserJobs((prevUserJobs) => [res.data, ...prevUserJobs]);
+        setUserJobs((prevUserJobs) => {
+          const currentUserJobs = Array.isArray(prevUserJobs) ? prevUserJobs : [];
+          return [res.data, ...currentUserJobs];
+        });
         await getUserJobs(userProfile._id);
       }
 
       await getJobs();
       // redirect to the job details page
       router.push(`/job/${res.data._id}`);
+      
+      // Return success for JobForm component
+      return { success: true, job: res.data };
     } catch (error) {
       console.log("Error creating job", error);
+      toast.error("Failed to create job");
+      return { success: false, error: error.message };
     }
   };
 
@@ -86,10 +99,10 @@ export const JobsContextProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await axios.get("/api/v1/jobs/user/" + userId);
-
-      setUserJobs(res.data);
+      setUserJobs(res.data || []);
     } catch (error) {
       console.log("Error getting user jobs", error);
+      setUserJobs([]);
     } finally {
       setLoading(false);
     }
@@ -138,9 +151,10 @@ export const JobsContextProvider = ({ children }) => {
       const res = await axios.get(
         `/api/v1/jobs/search?${queryParams.toString()}`
       );
-      setJobs(res.data);
+      setJobs(res.data || []);
     } catch (error) {
       console.log("Error searching jobs", error);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -159,27 +173,26 @@ export const JobsContextProvider = ({ children }) => {
   };
 
   // like/unlike a job (toggle)
-const likeJob = async (jobId) => {
-  console.log("Toggling job like", jobId);
-  try {
-    const res = await axios.put(`/api/v1/jobs/like/${jobId}`);
+  const likeJob = async (jobId) => {
+    console.log("Toggling job like", jobId);
+    try {
+      const res = await axios.put(`/api/v1/jobs/like/${jobId}`);
 
-    // Vérifier si le job a été liké ou unliké
-    const job = jobs.find(j => j._id === jobId);
-    const wasLiked = job?.likes.includes(userProfile._id);
+      // Vérifier si le job a été liké ou unliké
+      const job = jobs.find(j => j._id === jobId);
+      const wasLiked = job?.likes.includes(userProfile._id);
 
-    if (wasLiked) {
-      toast.success("Job removed from favorites");
-    } else {
-      toast.success("Job added to favorites");
+      if (wasLiked) {
+        toast.success("Job removed from favorites");
+      } else {
+        toast.success("Job added to favorites");
+      }
+      
+      getJobs();
+    } catch (error) {
+      console.log("Error toggling job like", error);
     }
-    
-    getJobs();
-  } catch (error) {
-    console.log("Error toggling job like", error);
-  }
-};
-
+  };
 
   const applyToJob = async (jobId) => {
     const job = jobs.find((j) => j._id === jobId);
@@ -208,8 +221,14 @@ const likeJob = async (jobId) => {
   const deleteJob = async (jobId) => {
     try {
       await axios.delete(`/api/v1/jobs/${jobId}`);
-      setJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
-      setUserJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
+      setJobs((prevJobs) => {
+        const currentJobs = Array.isArray(prevJobs) ? prevJobs : [];
+        return currentJobs.filter((job) => job._id !== jobId);
+      });
+      setUserJobs((prevJobs) => {
+        const currentJobs = Array.isArray(prevJobs) ? prevJobs : [];
+        return currentJobs.filter((job) => job._id !== jobId);
+      });
       toast.success("Job deleted successfully");
     } catch (error) {
       console.log("Error deleting job", error);

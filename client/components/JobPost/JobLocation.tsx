@@ -1,30 +1,33 @@
 "use client";
 import { useGlobalContext } from "@/context/globalContext";
-import React from "react";
+import React, { useMemo } from "react";
 import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { MapPin, Globe, Building2 } from "lucide-react";
+import { Country, City } from "country-state-city";
 
 function JobLocation() {
   const { setLocation, location } = useGlobalContext();
-  
-  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const countries = useMemo(() => Country.getAllCountries(), []);
+  const cities = useMemo(() => {
+    if (!location.country) return [];
+    const country = countries.find(c => c.name === location.country);
+    return country ? City.getCitiesOfCountry(country.isoCode) : [];
+  }, [location.country, countries]);
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setLocation((prev: {}) => ({ ...prev, [name]: value }));
+    setLocation((prev) => ({ ...prev, [name]: value }));
+
+    // Reset city when country changes
+    if (name === "country") {
+      setLocation((prev) => ({ ...prev, city: "" }));
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-          <MapPin size={20} className="text-white" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">Job Location</h3>
-          <p className="text-sm text-gray-600">Specify where this job is located</p>
-        </div>
-      </div>
+      
 
       {/* Location Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -34,15 +37,21 @@ function JobLocation() {
             <Globe size={16} className="text-green-600" />
             Country
           </Label>
-          <Input
-            type="text"
+
+          <select
             id="country"
             name="country"
             value={location.country}
-            onChange={handleLocationChange}
+            onChange={handleChange}
             className="h-12 px-4 border-2 border-gray-200 focus:border-green-500 rounded-xl"
-            placeholder="e.g., United States"
-          />
+          >
+            <option value="">Select a country</option>
+            {countries.map((c) => (
+              <option key={c.isoCode} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* City */}
@@ -51,15 +60,24 @@ function JobLocation() {
             <Building2 size={16} className="text-green-600" />
             City
           </Label>
-          <Input
-            type="text"
+
+          <select
             id="city"
             name="city"
             value={location.city}
-            onChange={handleLocationChange}
-            className="h-12 px-4 border-2 border-gray-200 focus:border-green-500 rounded-xl"
-            placeholder="e.g., San Francisco"
-          />
+            onChange={handleChange}
+            disabled={!location.country}
+            className={`h-12 px-4 border-2 border-gray-200 focus:border-green-500 rounded-xl ${
+              !location.country ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+          >
+            <option value="">Select a city</option>
+            {cities.map((city) => (
+              <option key={city.name} value={city.name}>
+                {city.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -69,12 +87,12 @@ function JobLocation() {
           <MapPin size={16} className="text-green-600" />
           Address (Optional)
         </Label>
-        <Input
+        <input
           type="text"
           id="address"
           name="address"
           value={location.address}
-          onChange={handleLocationChange}
+          onChange={handleChange}
           className="h-12 px-4 border-2 border-gray-200 focus:border-green-500 rounded-xl"
           placeholder="e.g., 123 Main Street, Suite 100"
         />

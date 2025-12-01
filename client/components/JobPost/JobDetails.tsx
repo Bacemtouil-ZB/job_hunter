@@ -41,8 +41,6 @@ function JobDetails() {
   const {
     handleSalaryChange,
     salary,
-    salaryType,
-    setSalaryType,
     setNegotiable,
     negotiable,
   } = useGlobalContext();
@@ -92,7 +90,7 @@ function JobDetails() {
           {/* Salary Input */}
           <div className="space-y-2">
             <Label htmlFor="salary" className="text-sm font-semibold text-gray-700">
-              Salary Amount
+              Salary per month
             </Label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">£</span>
@@ -101,29 +99,14 @@ function JobDetails() {
                 id="salary"
                 placeholder="50,000"
                 value={salary}
+                min={0}    
                 onChange={handleSalaryChange}
                 className="h-12 pl-8 pr-4 border-2 border-gray-200 focus:border-green-500 rounded-xl"
               />
             </div>
           </div>
 
-          {/* Salary Type */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold text-gray-700">
-              Payment Period
-            </Label>
-            <Select onValueChange={setSalaryType} value={salaryType}>
-              <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-green-500 rounded-xl">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Yearly">Per Year</SelectItem>
-                <SelectItem value="Monthly">Per Month</SelectItem>
-                <SelectItem value="Weekly">Per Week</SelectItem>
-                <SelectItem value="Hourly">Per Hour</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          
         </div>
 
         {/* Checkboxes */}
@@ -132,7 +115,7 @@ function JobDetails() {
             <Checkbox id="negotiable" checked={negotiable} onCheckedChange={setNegotiable} />
             <span className="text-sm font-medium text-gray-700">Salary is negotiable</span>
           </label>
-          
+
           <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl cursor-pointer transition-colors">
             <Checkbox id="hideSalary" />
             <span className="text-sm font-medium text-gray-700">Hide salary from listing</span>
@@ -140,14 +123,11 @@ function JobDetails() {
         </div>
 
         {/* Salary Preview */}
-        {salary > 0 && salaryType && (
+        {salary > 0 && (
           <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
             <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Salary Preview</p>
             <p className="text-2xl font-bold text-gray-900">
               £{salary.toLocaleString()}
-              <span className="text-base font-medium text-gray-600">
-                {" /"}{salaryType === "Yearly" ? "year" : salaryType === "Monthly" ? "month" : salaryType === "Weekly" ? "week" : "hour"}
-              </span>
             </p>
             {negotiable && (
               <p className="text-xs text-green-600 font-medium mt-1">💬 Negotiable</p>

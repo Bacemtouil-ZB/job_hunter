@@ -24,7 +24,6 @@ export const GlobalContextProvider = ({ children }) => {
   const [jobDescription, setJobDescription] = useState("");
   const [salary, setSalary] = useState(0);
   const [activeEmploymentTypes, setActiveEmploymentTypes] = useState([]);
-  const [salaryType, setSalaryType] = useState("Year");
   const [negotiable, setNegotiable] = useState(false);
   const [tags, setTags] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -80,7 +79,6 @@ export const GlobalContextProvider = ({ children }) => {
     setJobDescription("");
     setSalary(0);
     setActiveEmploymentTypes([]);
-    setSalaryType("Year");
     setNegotiable(false);
     setTags([]);
     setSkills([]);
@@ -109,7 +107,6 @@ export const GlobalContextProvider = ({ children }) => {
         jobDescription,
         salary,
         activeEmploymentTypes,
-        salaryType,
         negotiable,
         tags,
         skills,
@@ -119,7 +116,6 @@ export const GlobalContextProvider = ({ children }) => {
         handleSalaryChange,
         setActiveEmploymentTypes,
         setJobDescription,
-        setSalaryType,
         setNegotiable,
         setTags,
         setSkills,

@@ -20,12 +20,20 @@ import {
   Code,
   ArrowRight,
   Building,
+  Mail,
+  UserCheck,
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { bookmark, bookmarkEmpty } from "@/utils/icons";
+
+interface Applicant {
+  _id: string;
+  name: string;
+  email: string;
+}
 
 function page() {
   const { jobs, likeJob, applyToJob } = useJobsContext();
@@ -36,9 +44,13 @@ function page() {
 
   const [isLiked, setIsLiked] = React.useState(false);
   const [isApplied, setIsApplied] = React.useState(false);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [loadingApplicants, setLoadingApplicants] = useState(false);
 
   const job = jobs.find((job: Job) => job._id === id);
   const otherJobs = jobs.filter((job: Job) => job._id !== id);
+
+  const isJobCreator = job && userProfile._id === job.createdBy._id;
 
   useEffect(() => {
     if (job) {
@@ -52,6 +64,31 @@ function page() {
     }
   }, [job, userProfile._id]);
 
+  // Fetch applicants if user is the job creator
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      if (isJobCreator && id) {
+        setLoadingApplicants(true);
+        try {
+          const response = await fetch(`http://localhost:8000/api/v1/applicants/${id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setApplicants(data);
+          } else {
+            toast.error("Failed to load applicants");
+          }
+        } catch (error) {
+          console.error("Error fetching applicants:", error);
+          toast.error("Error loading applicants");
+        } finally {
+          setLoadingApplicants(false);
+        }
+      }
+    };
+
+    fetchApplicants();
+  }, [isJobCreator, id]);
+
   if (!job) return null;
 
   const {
@@ -60,7 +97,7 @@ function page() {
     description,
     salary,
     createdBy,
-    applicants,
+    applicants: applicantIds,
     jobType,
     createdAt,
     salaryType,
@@ -153,7 +190,7 @@ function page() {
                   <span className="font-medium">{location}</span>
                 </div>
 
-                {/* Stats Grid - FIXED WITH LEADING-TIGHT */}
+                {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Salary Card */}
                   <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-shadow">
@@ -186,7 +223,7 @@ function page() {
                       <Users size={18} />
                       <span className="text-xs font-semibold uppercase tracking-wide">Applicants</span>
                     </div>
-                    <p className="font-bold text-2xl text-gray-900 leading-tight">{applicants.length}</p>
+                    <p className="font-bold text-2xl text-gray-900 leading-tight">{applicantIds.length}</p>
                   </div>
 
                   {/* Job Type Card */}
@@ -214,6 +251,61 @@ function page() {
                 dangerouslySetInnerHTML={{ __html: description }}
               ></div>
             </div>
+
+            {/* Applicants Section - Only visible to job creator */}
+            {isJobCreator && (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                    <UserCheck size={16} className="text-white" />
+                  </div>
+                  Applicants ({applicantIds.length})
+                </h2>
+
+                {loadingApplicants ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  </div>
+                ) : applicants.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users size={48} className="mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500 font-medium">No applicants yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Check back later for applications</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {applicants.map((applicant, index) => (
+                      <div
+                        key={applicant._id}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                            {applicant.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900">{applicant.name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Mail size={14} className="text-indigo-500" />
+                              <a
+                                href={`mailto:${applicant.email}`}
+                                className="hover:text-indigo-600 transition-colors"
+                              >
+                                {applicant.email}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200">
+                          #{index + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
           </div>
 
           {/* Right Sidebar - Actions & Info */}

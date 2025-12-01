@@ -29,25 +29,12 @@ if (process.env.NODE_ENV === 'development') {
 
 export async function connectToDatabase(): Promise<Db> {
   const client = await clientPromise;
-  const dbName = process.env.MONGODB_DB_NAME || 'jobfinder';
+  const dbName = process.env.MONGODB_DB_NAME || 'test';
   
-  console.log('🔌 Connecting to database:', dbName);
-  console.log('📝 MONGODB_DB_NAME from env:', process.env.MONGODB_DB_NAME);
+  console.log(' Connecting to database:', dbName);
+  console.log(' MONGODB_DB_NAME from env:', process.env.MONGODB_DB_NAME);
   
   const db = client.db(dbName);
-  
-  // Vérifier les collections disponibles
-  try {
-    const collections = await db.listCollections().toArray();
-    console.log('📚 Available collections:', collections.map(c => c.name));
-    
-    // Compter les documents dans la collection jobs
-    const jobCount = await db.collection('jobs').countDocuments();
-    console.log('📊 Total jobs in collection:', jobCount);
-  } catch (error) {
-    console.error('❌ Error listing collections:', error);
-  }
-  
   return db;
 }
 

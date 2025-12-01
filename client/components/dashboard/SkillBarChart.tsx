@@ -37,7 +37,7 @@ export default function SkillBarChart() {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Top 10 des Compétences Demandées</h3>
+        <h3 className="text-lg font-semibold mb-4">Top 10 Skills in Demand</h3>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
@@ -48,7 +48,7 @@ export default function SkillBarChart() {
   if (error) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Top 10 des Compétences Demandées</h3>
+        <h3 className="text-lg font-semibold mb-4">Top 10 Skills in Demand</h3>
         <div className="text-red-500 text-center p-4">{error}</div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function SkillBarChart() {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold mb-4">Top 10 des Compétences Demandées</h3>
+      <h3 className="text-lg font-semibold mb-4">Top 10 Skills in Demand</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
           <CartesianGrid strokeDasharray="3 3" />
